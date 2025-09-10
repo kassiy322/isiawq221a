@@ -1,5 +1,7 @@
 name: Build Parser 2GIS Enhanced
 
+name: Build Parser 2GIS Enhanced
+
 on:
   push:
     branches: [ main, master ]
@@ -9,171 +11,66 @@ on:
   workflow_dispatch:
 
 jobs:
-  build-windows:
-    runs-on: windows-latest
-    
+  build:
+    name: Build
+
+    strategy:
+      matrix:
+        include:
+          - os: ubuntu-20.04
+            dist: linux
+
+          - os: macos-12
+            dist: macos
+            ext:
+
+          - os: macos-14
+            dist: macos-arm
+            ext:
+
+          - os: windows-2019
+            dist: windows
+
+    runs-on: ${{ matrix.os }}
+
     steps:
+    - name: Get the version
+      id: get_version
+      run: echo "version=${GITHUB_REF#refs/tags/}" >> $GITHUB_OUTPUT
+      shell: bash
+
     - uses: actions/checkout@v4
-    
-    - name: Set up Python
+
+    - name: Set up Python 3.11
       uses: actions/setup-python@v5
       with:
-        python-version: '3.11'
-    
-    - name: Install Chrome
-      uses: browser-actions/setup-chrome@latest
-    
-    - name: Cache pip packages
-      uses: actions/cache@v4
-      with:
-        path: ~\AppData\Local\pip\Cache
-        key: ${{ runner.os }}-pip-${{ hashFiles('**/setup.py') }}
-        restore-keys: |
-          ${{ runner.os }}-pip-
-    
+        python-version: "3.11.3"
+
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
-        pip install pyinstaller setuptools wheel
-        pip install -e .
-    
-    - name: Test installation
+        python -m pip install -e .[gui,dev]
+        # Replace pydantic with no-binary version to lightweight target binary a bit
+        # python -m pip uninstall -y pydantic
+        # python -m pip install --no-binary pydantic pydantic>=1.9.0
+
+    - name: Build standalone app
       run: |
-        python -c "from parser_2gis import main; print('Module loaded successfully')"
-    
-    - name: Build Windows executable
-      run: |
-        mkdir dist
-        pyinstaller --onefile `
-          --name parser-2gis `
-          --distpath dist/windows `
-          --add-data "parser_2gis/data/cities.json;parser_2gis/data" `
-          --add-data "parser_2gis/data/rubrics.json;parser_2gis/data" `
-          --hidden-import pydantic `
-          --hidden-import psutil `
-          --hidden-import openpyxl `
-          --collect-submodules parser_2gis `
-          --console `
-          parser-2gis.py
-    
-    - name: Copy additional files
-      run: |
-        copy README_RELEASE.md "dist/windows/README.md"
-        '@echo off' | Out-File -FilePath "dist/windows/run-example.bat" -Encoding ASCII
-        'parser-2gis.exe -i "https://2gis.ru/moscow/search/кафе" -o cafes.csv -f csv --parser.max-records 50' | Out-File -FilePath "dist/windows/run-example.bat" -Append -Encoding ASCII
-    
-    - name: Create Windows archive
-      run: |
-        cd dist
-        powershell -command "Compress-Archive -Path 'windows' -DestinationPath 'parser-2gis-enhanced-windows.zip'"
-    
-    - name: Upload Windows artifact
+        python setup.py build_standalone
+
+    - name: Archive Windows distributive
+      if: matrix.dist == 'windows'
+      run: pushd dist && 7z a ../Parser2GIS-Enhanced-${{steps.get_version.outputs.version}}-${{matrix.dist}}.zip  Parser2GIS.exe && popd
+      shell: bash
+
+    - name: Archive Linux/MacOS distributive
+      if: matrix.dist != 'windows'
+      run: tar -C dist/ -czvf Parser2GIS-Enhanced-${{steps.get_version.outputs.version}}-${{matrix.dist}}.tar.gz Parser2GIS
+      shell: bash
+
+    - name: Upload distributive
       uses: actions/upload-artifact@v4
       with:
-        name: parser-2gis-windows
-        path: dist/parser-2gis-enhanced-windows.zip
-  
-  build-macos:
-    runs-on: macos-latest
-    
-    steps:
-    - uses: actions/checkout@v4
-    
-    - name: Set up Python
-      uses: actions/setup-python@v5
-      with:
-        python-version: '3.11'
-    
-    - name: Install Chrome
-      run: |
-        brew install --cask google-chrome
-    
-    - name: Cache pip packages
-      uses: actions/cache@v4
-      with:
-        path: ~/Library/Caches/pip
-        key: ${{ runner.os }}-pip-${{ hashFiles('**/setup.py') }}
-        restore-keys: |
-          ${{ runner.os }}-pip-
-    
-    - name: Install dependencies
-      run: |
-        python -m pip install --upgrade pip
-        pip install pyinstaller setuptools wheel
-        pip install -e .
-    
-    - name: Test installation
-      run: |
-        python -c "from parser_2gis import main; print('Module loaded successfully')"
-    
-    - name: Build macOS executable
-      run: |
-        mkdir -p dist
-        pyinstaller --onefile \
-          --name parser-2gis \
-          --distpath dist/macos \
-          --add-data "parser_2gis/data/cities.json:parser_2gis/data" \
-          --add-data "parser_2gis/data/rubrics.json:parser_2gis/data" \
-          --hidden-import pydantic \
-          --hidden-import psutil \
-          --hidden-import openpyxl \
-          --collect-submodules parser_2gis \
-          --console \
-          parser-2gis.py
-    
-    - name: Copy additional files
-      run: |
-        cp README_RELEASE.md "dist/macos/README.md"
-        echo '#!/bin/bash' > "dist/macos/run-example.sh"
-        echo './parser-2gis -i "https://2gis.ru/moscow/search/кафе" -o cafes.csv -f csv --parser.max-records 50' >> "dist/macos/run-example.sh"
-        chmod +x "dist/macos/run-example.sh"
-        chmod +x "dist/macos/parser-2gis"
-    
-    - name: Create macOS archive
-      run: |
-        cd dist
-        tar -czf parser-2gis-enhanced-macos.tar.gz macos/
-    
-    - name: Upload macOS artifact
-      uses: actions/upload-artifact@v4
-      with:
-        name: parser-2gis-macos
-        path: dist/parser-2gis-enhanced-macos.tar.gz
-  
-  release:
-    if: startsWith(github.ref, 'refs/tags/')
-    needs: [build-windows, build-macos]
-    runs-on: ubuntu-latest
-    
-    steps:
-    - name: Download all artifacts
-      uses: actions/download-artifact@v4
-    
-    - name: Create Release
-      uses: softprops/action-gh-release@v1
-      with:
-        files: |
-          parser-2gis-windows/parser-2gis-enhanced-windows.zip
-          parser-2gis-macos/parser-2gis-enhanced-macos.tar.gz
-        body: |
-          # Parser 2GIS Enhanced Edition
-          
-          ## 🆕 Новые возможности:
-          - ✅ **67 колонок данных** включая телефоны, email, социальные сети
-          - ✅ **Автоматическая пагинация** для сбора данных с нескольких страниц
-          - ✅ **Видимый браузер** по умолчанию для наблюдения процесса
-          - ✅ **Улучшенные настройки** для максимального сбора информации
-          
-          ## 📥 Скачать:
-          - **Windows**: `parser-2gis-enhanced-windows.zip`
-          - **macOS**: `parser-2gis-enhanced-macos.tar.gz`
-          
-          ## 🚀 Быстрый старт:
-          ```bash
-          # Распакуйте архив и запустите:
-          ./parser-2gis -i "https://2gis.ru/moscow/search/кафе" -o cafes.csv -f csv --parser.max-records 100
-          ```
-        draft: false
-        prerelease: false
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        name: dist-${{ matrix.dist }}
+        path: Parser2GIS-Enhanced-*
+        retention-days: 5
