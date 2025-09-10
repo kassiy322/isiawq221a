@@ -44,16 +44,16 @@ jobs:
     - name: Build Windows executable
       run: |
         mkdir dist
-        pyinstaller --onefile ^
-          --name parser-2gis ^
-          --distpath dist/windows ^
-          --add-data "parser_2gis/data/cities.json;parser_2gis/data" ^
-          --add-data "parser_2gis/data/rubrics.json;parser_2gis/data" ^
-          --hidden-import pydantic ^
-          --hidden-import psutil ^
-          --hidden-import openpyxl ^
-          --collect-submodules parser_2gis ^
-          --console ^
+        pyinstaller --onefile `
+          --name parser-2gis `
+          --distpath dist/windows `
+          --add-data "parser_2gis/data/cities.json;parser_2gis/data" `
+          --add-data "parser_2gis/data/rubrics.json;parser_2gis/data" `
+          --hidden-import pydantic `
+          --hidden-import psutil `
+          --hidden-import openpyxl `
+          --collect-submodules parser_2gis `
+          --console `
           parser-2gis.py
     
     - name: Copy additional files
