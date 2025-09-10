@@ -16,7 +16,7 @@ jobs:
     - uses: actions/checkout@v4
     
     - name: Set up Python
-      uses: actions/setup-python@v4
+      uses: actions/setup-python@v5
       with:
         python-version: '3.11'
     
@@ -24,7 +24,7 @@ jobs:
       uses: browser-actions/setup-chrome@latest
     
     - name: Cache pip packages
-      uses: actions/cache@v3
+      uses: actions/cache@v4
       with:
         path: ~\AppData\Local\pip\Cache
         key: ${{ runner.os }}-pip-${{ hashFiles('**/setup.py') }}
@@ -68,7 +68,7 @@ jobs:
         powershell -command "Compress-Archive -Path 'windows' -DestinationPath 'parser-2gis-enhanced-windows.zip'"
     
     - name: Upload Windows artifact
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: parser-2gis-windows
         path: dist/parser-2gis-enhanced-windows.zip
@@ -80,7 +80,7 @@ jobs:
     - uses: actions/checkout@v4
     
     - name: Set up Python
-      uses: actions/setup-python@v4
+      uses: actions/setup-python@v5
       with:
         python-version: '3.11'
     
@@ -89,7 +89,7 @@ jobs:
         brew install --cask google-chrome
     
     - name: Cache pip packages
-      uses: actions/cache@v3
+      uses: actions/cache@v4
       with:
         path: ~/Library/Caches/pip
         key: ${{ runner.os }}-pip-${{ hashFiles('**/setup.py') }}
@@ -135,7 +135,7 @@ jobs:
         tar -czf parser-2gis-enhanced-macos.tar.gz macos/
     
     - name: Upload macOS artifact
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: parser-2gis-macos
         path: dist/parser-2gis-enhanced-macos.tar.gz
@@ -147,7 +147,7 @@ jobs:
     
     steps:
     - name: Download all artifacts
-      uses: actions/download-artifact@v3
+      uses: actions/download-artifact@v4
     
     - name: Create Release
       uses: softprops/action-gh-release@v1
