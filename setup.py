@@ -80,7 +80,7 @@ class BuildStandaloneCommand(distutils.cmd.Command):
 if __name__ == '__main__':
     setup(
         name='parser-2gis-enhanced',
-        version=version + '-enhanced',
+        version='1.3.0',  # Enhanced version
         description='Парсер сайта 2GIS - Enhanced Edition с улучшенной пагинацией и расширенным сбором данных',
         long_description=long_description,
         long_description_content_type=long_description_content_type,
