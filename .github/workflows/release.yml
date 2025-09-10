@@ -12,10 +12,10 @@ jobs:
     strategy:
       matrix:
         include:
-          - os: ubuntu-20.04
+          - os: ubuntu-22.04
             dist: linux
 
-          - os: macos-12
+          - os: macos-13
             dist: macos
             ext:
 
@@ -23,7 +23,7 @@ jobs:
             dist: macos-arm
             ext:
 
-          - os: windows-2019
+          - os: windows-2022
             dist: windows
 
     runs-on: ${{ matrix.os }}
@@ -34,7 +34,7 @@ jobs:
       run: echo "version=${GITHUB_REF#refs/tags/}" >> $GITHUB_OUTPUT
       shell: bash
 
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
 
     - name: Set up Python 3.11
       uses: actions/setup-python@v5
