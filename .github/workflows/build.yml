@@ -59,8 +59,8 @@ jobs:
     - name: Copy additional files
       run: |
         copy README_RELEASE.md "dist/windows/README.md"
-        echo @echo off > "dist/windows/run-example.bat"
-        echo parser-2gis.exe -i "https://2gis.ru/moscow/search/кафе" -o cafes.csv -f csv --parser.max-records 50 >> "dist/windows/run-example.bat"
+        '@echo off' | Out-File -FilePath "dist/windows/run-example.bat" -Encoding ASCII
+        'parser-2gis.exe -i "https://2gis.ru/moscow/search/кафе" -o cafes.csv -f csv --parser.max-records 50' | Out-File -FilePath "dist/windows/run-example.bat" -Append -Encoding ASCII
     
     - name: Create Windows archive
       run: |
