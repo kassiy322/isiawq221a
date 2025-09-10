@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import List, Optional
+from typing import List, Optional, Union
 
 from pydantic import BaseModel
 
@@ -139,7 +139,7 @@ class CatalogItem(BaseModel):
         return 'https://2gis.com/firm/%s' % self.id.split('_')[0]
 
     @property
-    def timezone(self) -> str | None:
+    def timezone(self) -> Optional[str]:
         if self.timezone_offset is None:
             return None
         sign = '-' if self.timezone_offset < 0 else '+'
